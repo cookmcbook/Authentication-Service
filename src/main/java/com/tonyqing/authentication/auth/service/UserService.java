@@ -10,8 +10,6 @@ import com.tonyqing.authentication.auth.exception.UserNotFoundException;
 
 import java.util.List;
 
-
-
 @Service
 public class UserService {
 
