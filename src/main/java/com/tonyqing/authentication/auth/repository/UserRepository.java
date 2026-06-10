@@ -8,4 +8,5 @@ import com.tonyqing.authentication.auth.entity.User;
 
 public interface UserRepository extends JpaRepository<User, Long>{
     Optional<User> findByEmail(String email);
+    boolean existsByEmail(String email);
 }

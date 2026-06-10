@@ -4,6 +4,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.ResponseStatus;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 
 import java.util.Map;
 
@@ -19,6 +20,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(InvalidSessionException.class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     public Map<String, String> handleInvalidSession(InvalidSessionException ex) {
+        return Map.of("error", ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateEmailException.class)
+    @ResponseStatus(HttpStatus.CONFLICT)
+    public Map<String, String> handleDuplicateEmail(DuplicateEmailException ex){
         return Map.of("error", ex.getMessage());
     }
 }

@@ -7,10 +7,14 @@ import org.springframework.stereotype.Service;
 
 import com.tonyqing.authentication.auth.dto.LoginRequest;
 import com.tonyqing.authentication.auth.dto.LoginResponse;
+import com.tonyqing.authentication.auth.dto.UserRequest;
+import com.tonyqing.authentication.auth.dto.UserResponse;
 import com.tonyqing.authentication.auth.entity.Session;
 import com.tonyqing.authentication.auth.entity.User;
+import com.tonyqing.authentication.auth.exception.DuplicateEmailException;
 import com.tonyqing.authentication.auth.exception.InvalidSessionException;
 import com.tonyqing.authentication.auth.exception.UserNotFoundException;
+import com.tonyqing.authentication.auth.mapper.UserMapper;
 import com.tonyqing.authentication.auth.repository.SessionRepository;
 import com.tonyqing.authentication.auth.repository.UserRepository;
 
@@ -60,6 +64,15 @@ public class AuthService {
                     String token = UUID.randomUUID().toString();
                     sessionRepository.save(new Session(token, user));
                     return new LoginResponse(token);
-                }).orElseThrow(() -> new UserNotFoundException(request.email()));
-    }     
+                }).orElseThrow(() -> new InvalidSessionException(request.email()));
+    }
+    
+    @Transactional
+    public UserResponse register(UserRequest request) {
+        User user = new User(request.name(), request.email());
+        if (userRepository.existsByEmail(user.getEmail())) {
+            throw new DuplicateEmailException(user.getEmail());
+        }
+        return UserMapper.toResponse(userRepository.save(user));
+    }
 }

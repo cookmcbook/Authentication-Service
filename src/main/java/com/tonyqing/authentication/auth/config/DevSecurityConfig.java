@@ -9,6 +9,8 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 
 import com.tonyqing.authentication.auth.security.SessionTokenFilter;
 
+import jakarta.servlet.http.HttpServletResponse;
+
 @Configuration
 @Profile("dev")
 public class DevSecurityConfig {
@@ -28,6 +30,12 @@ public class DevSecurityConfig {
                 )
                 .formLogin(form -> form.disable())
                 .httpBasic(httpBasic -> httpBasic.disable())
+                .exceptionHandling(
+                        ex -> ex.authenticationEntryPoint((request, response, authException) -> 
+                        {
+                                response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+                        })
+                )
                 .addFilterBefore(sessionTokenFilter, UsernamePasswordAuthenticationFilter.class)
                 .build();
     }

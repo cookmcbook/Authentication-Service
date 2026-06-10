@@ -10,6 +10,8 @@ import org.springframework.web.bind.annotation.RequestBody;
 
 import com.tonyqing.authentication.auth.dto.LoginRequest;
 import com.tonyqing.authentication.auth.dto.LoginResponse;
+import com.tonyqing.authentication.auth.dto.UserRequest;
+import com.tonyqing.authentication.auth.dto.UserResponse;
 import com.tonyqing.authentication.auth.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -28,6 +30,13 @@ public class AuthController {
     @Transactional
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
         return ResponseEntity.ok(authService.login(request));
+    }
+
+    // the status is expected to be 201 Created
+    @PostMapping("/register")
+    @Transactional
+    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRequest request) {
+        return ResponseEntity.status(201).body(authService.register(request));
     }
 
 }

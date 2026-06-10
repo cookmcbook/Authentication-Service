@@ -36,8 +36,10 @@ public class Session {
 
     @PrePersist
     public void onCreate() {
-        // add comment detailing what this does
-        expiresAt = Instant.now().plusSeconds(60 * 60 * 24); // 24 hours from now
+        // Set expiresAt to 24 hours from now if it's not already set.
+        if (this.expiresAt == null) {
+            expiresAt = Instant.now().plusSeconds(60 * 60 * 24);
+        }
     }
 
     protected Session() {}
