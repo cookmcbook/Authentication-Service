@@ -1,9 +1,9 @@
 package com.tonyqing.authentication.auth.service;
-import com.tonyqing.authentication.auth.dto.UserResponse;
+import com.tonyqing.authentication.auth.dto.RegisterResponse;
 import com.tonyqing.authentication.auth.repository.UserRepository;
 
 import org.springframework.stereotype.Service;
-import com.tonyqing.authentication.auth.dto.UserRequest;
+import com.tonyqing.authentication.auth.dto.RegisterRequest;
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.mapper.UserMapper;
 import com.tonyqing.authentication.auth.exception.UserNotFoundException;
@@ -18,23 +18,23 @@ public class UserService {
     public UserService(UserRepository userRepository) {
         this.userRepository = userRepository;
     }
-    public UserResponse createUser(UserRequest userRequest) {
+    public RegisterResponse createUser(RegisterRequest userRequest) {
         User user = userRepository.save(UserMapper.toEntity(userRequest));
         return UserMapper.toResponse(user);
     }
 
-    public List<UserResponse> getAllUsers() {
+    public List<RegisterResponse> getAllUsers() {
         return userRepository.findAll().stream().map(UserMapper::toResponse).toList();
     }
 
-    public UserResponse getUserById(Long id) {
+    public RegisterResponse getUserById(Long id) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new UserNotFoundException(id));
 
         return UserMapper.toResponse(user);
     }
 
-    public UserResponse updateUser(Long id, UserRequest request) {
+    public RegisterResponse updateUser(Long id, RegisterRequest request) {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new UserNotFoundException(id));
 

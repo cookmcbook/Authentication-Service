@@ -1,6 +1,6 @@
 package com.tonyqing.authentication.auth.service;
 
-import com.tonyqing.authentication.auth.dto.UserRequest;
+import com.tonyqing.authentication.auth.dto.RegisterRequest;
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.repository.SessionRepository;
 import com.tonyqing.authentication.auth.repository.UserRepository;
@@ -29,7 +29,7 @@ class AuthServiceTests {
     
     @Test
     void register_shouldCreateUserWithHashedPassword() {
-        UserRequest request = new UserRequest("Tony", "tony@example.com", "password");
+        RegisterRequest request = new RegisterRequest("Tony", "tony@example.com", "password");
         authService.register(request);
 
         User user = userRepository.findByEmail("tony@example.com").orElseThrow();
@@ -42,11 +42,11 @@ class AuthServiceTests {
 
     @Test
     void register_shouldRejectDuplicateEmail() {
-        UserRequest request = new UserRequest("Tony", "tony@example.com", "password");
+        RegisterRequest request = new RegisterRequest("Tony", "tony@example.com", "password");
         authService.register(request);
 
         assertThatThrownBy(() ->
-                authService.register(new UserRequest("Other", "tony@example.com", "password"))
+                authService.register(new RegisterRequest("Other", "tony@example.com", "password"))
         ).isInstanceOf(RuntimeException.class);
     }
 

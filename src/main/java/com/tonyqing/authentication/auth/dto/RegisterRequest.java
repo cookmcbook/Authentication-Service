@@ -3,7 +3,7 @@ package com.tonyqing.authentication.auth.dto;
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 
-    public record UserRequest(
+    public record RegisterRequest(
         @NotBlank String name,
         @Email @NotBlank String email,
         @NotBlank String password

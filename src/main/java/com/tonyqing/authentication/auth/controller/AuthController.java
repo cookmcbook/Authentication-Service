@@ -4,14 +4,18 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
 import com.tonyqing.authentication.auth.dto.LoginRequest;
 import com.tonyqing.authentication.auth.dto.LoginResponse;
-import com.tonyqing.authentication.auth.dto.UserRequest;
-import com.tonyqing.authentication.auth.dto.UserResponse;
+import com.tonyqing.authentication.auth.dto.RegisterRequest;
+import com.tonyqing.authentication.auth.dto.RegisterResponse;
+import com.tonyqing.authentication.auth.entity.User;
+import com.tonyqing.authentication.auth.mapper.UserMapper;
 import com.tonyqing.authentication.auth.service.AuthService;
 
 import jakarta.validation.Valid;
@@ -26,6 +30,12 @@ public class AuthController {
         this.authService = authService;
     }
 
+    @GetMapping("/me") 
+    public ResponseEntity<RegisterResponse> me(Authentication authentication) {
+        User user = (User) authentication.getPrincipal();
+        return ResponseEntity.ok(UserMapper.toResponse(user));
+    }
+
     @PostMapping("/login")
     @Transactional
     public ResponseEntity<LoginResponse> login(@Valid @RequestBody LoginRequest request) {
@@ -35,7 +45,7 @@ public class AuthController {
     // the status is expected to be 201 Created
     @PostMapping("/register")
     @Transactional
-    public ResponseEntity<UserResponse> register(@Valid @RequestBody UserRequest request) {
+    public ResponseEntity<RegisterResponse> register(@Valid @RequestBody RegisterRequest request) {
         return ResponseEntity.status(201).body(authService.register(request));
     }
 

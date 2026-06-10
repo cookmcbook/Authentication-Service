@@ -8,8 +8,8 @@ import org.springframework.stereotype.Service;
 
 import com.tonyqing.authentication.auth.dto.LoginRequest;
 import com.tonyqing.authentication.auth.dto.LoginResponse;
-import com.tonyqing.authentication.auth.dto.UserRequest;
-import com.tonyqing.authentication.auth.dto.UserResponse;
+import com.tonyqing.authentication.auth.dto.RegisterRequest;
+import com.tonyqing.authentication.auth.dto.RegisterResponse;
 import com.tonyqing.authentication.auth.entity.Session;
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.exception.DuplicateEmailException;
@@ -31,21 +31,6 @@ public class AuthService {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
-    }
-
-    public boolean isAuthenticated(String token) {
-        return sessionRepository.findByToken(token)
-                .map(session -> {
-                    // Check if the session is still valid
-                    if (session.getExpiresAt().isAfter(Instant.now())) {
-                        return true;
-                    } else {
-                        // Delete the expired session
-                        sessionRepository.delete(session);
-                        return false;
-                    }
-                })
-                .orElse(false);
     }
 
     public User getUserFromToken(String token) {
@@ -74,7 +59,7 @@ public class AuthService {
     }
     
     @Transactional
-    public UserResponse register(UserRequest request) {
+    public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
             throw new DuplicateEmailException(request.email());
         }

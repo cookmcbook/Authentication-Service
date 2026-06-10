@@ -3,7 +3,7 @@ package com.tonyqing.authentication.auth;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tonyqing.authentication.auth.dto.LoginRequest;
 import com.tonyqing.authentication.auth.dto.LoginResponse;
-import com.tonyqing.authentication.auth.dto.UserRequest;
+import com.tonyqing.authentication.auth.dto.RegisterRequest;
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.repository.UserRepository;
 import com.tonyqing.authentication.auth.repository.SessionRepository;
@@ -49,7 +49,7 @@ class AuthenticationIntegrationTests {
     @Test
     void shouldRegisterLoginAndAccessProtectedRoute() throws Exception {
         // 1. Register a new account
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
+        RegisterRequest signUpRequest = new RegisterRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -77,8 +77,7 @@ class AuthenticationIntegrationTests {
 
         // 3. Use the token to make an authenticated request
         // This tests that SessionTokenFilter correctly identifies the user from the DB
-        User user = userRepository.findByEmail("tony@example.com").orElseThrow();
-        mockMvc.perform(get("/api/users/" + user.getId())
+        mockMvc.perform(get("/api/auth/me")
                 .header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.email").value("tony@example.com"))
@@ -88,37 +87,35 @@ class AuthenticationIntegrationTests {
 
     @Test
     void shouldRejectMissingTokenOnProtectedRoute() throws Exception {
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
+        RegisterRequest signUpRequest = new RegisterRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
                 .andExpect(status().isCreated());
 
-        User user = userRepository.findByEmail("tony@example.com").orElseThrow();
-        mockMvc.perform(get("/api/users/" + user.getId()))
+        mockMvc.perform(get("/api/auth/me"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void shouldRejectInvalidTokenOnProtectedRoute() throws Exception {
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
+        RegisterRequest signUpRequest = new RegisterRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
                 .content(objectMapper.writeValueAsString(signUpRequest)))
                 .andExpect(status().isCreated());
 
-        User user = userRepository.findByEmail("tony@example.com").orElseThrow();
 
-        mockMvc.perform(get("/api/users/" + user.getId())
+        mockMvc.perform(get("/api/auth/me")
                 .header("Authorization", "Bearer fake-token"))
                 .andExpect(status().isUnauthorized());
     }
 
     @Test
     void shouldRejectDuplicateEmailRegistration() throws Exception {
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
+        RegisterRequest signUpRequest = new RegisterRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
