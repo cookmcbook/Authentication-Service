@@ -26,6 +26,9 @@ public class User {
     @Column(nullable = false)
     private Instant createdAt;
 
+    @Column(nullable = false)
+    private String passwordHash;
+
     @PrePersist
     public void onCreate() {
         createdAt = Instant.now();
@@ -33,9 +36,10 @@ public class User {
     
     protected User() {}
 
-    public User(String displayName, String email) {
+    public User(String displayName, String email, String passwordHash) {
         this.displayName = displayName;
         this.email = email;
+        this.passwordHash = passwordHash;
     }
 
     public Instant getCreatedAt() {
@@ -54,6 +58,10 @@ public class User {
         return email;
     }
 
+    public String getPasswordHash() {
+        return passwordHash;
+    }
+    
     public void setDisplayName(String displayName) {
         this.displayName = displayName;
     }
@@ -62,4 +70,7 @@ public class User {
         this.email = email;
     }
 
+    protected void setPasswordHash(String passwordHash) {
+        this.passwordHash = passwordHash;
+    }
 }

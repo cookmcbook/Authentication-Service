@@ -1,11 +1,8 @@
 package com.tonyqing.authentication.auth.repository;
 
 import com.tonyqing.authentication.auth.entity.User;
-import com.tonyqing.authentication.auth.repository.SessionRepository;
-import com.tonyqing.authentication.auth.repository.UserRepository;
 import com.tonyqing.authentication.auth.entity.Session;
 import org.junit.jupiter.api.Test;
-import org.springframework.test.context.ActiveProfiles;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 
@@ -26,7 +23,7 @@ class SessionRepositoryTests {
     @Test
     void shouldDeleteExpiredSessions() {
         // Given
-        User user = userRepository.save(new User("Tester", "test@example.com"));
+        User user = userRepository.save(new User("Tester", "test@example.com", "password"));
         Instant now = Instant.now();
         
         Session valid = new Session("valid-token", user);

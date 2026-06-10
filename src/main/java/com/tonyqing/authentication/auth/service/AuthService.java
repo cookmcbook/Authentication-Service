@@ -3,6 +3,7 @@ package com.tonyqing.authentication.auth.service;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import com.tonyqing.authentication.auth.dto.LoginRequest;
@@ -13,7 +14,6 @@ import com.tonyqing.authentication.auth.entity.Session;
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.exception.DuplicateEmailException;
 import com.tonyqing.authentication.auth.exception.InvalidSessionException;
-import com.tonyqing.authentication.auth.exception.UserNotFoundException;
 import com.tonyqing.authentication.auth.mapper.UserMapper;
 import com.tonyqing.authentication.auth.repository.SessionRepository;
 import com.tonyqing.authentication.auth.repository.UserRepository;
@@ -22,10 +22,13 @@ import jakarta.transaction.Transactional;
 
 @Service
 public class AuthService {
+
+    private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
 
-    public AuthService(UserRepository userRepository, SessionRepository sessionRepository) {
+    public AuthService(PasswordEncoder passwordEncoder, UserRepository userRepository, SessionRepository sessionRepository) {
+        this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
     }
@@ -61,6 +64,9 @@ public class AuthService {
     public LoginResponse login(LoginRequest request) {
         return userRepository.findByEmail(request.email())
                 .map(user -> {
+                    if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
+                        throw new InvalidSessionException("Invalid credentials");
+                    }
                     String token = UUID.randomUUID().toString();
                     sessionRepository.save(new Session(token, user));
                     return new LoginResponse(token);
@@ -69,10 +75,15 @@ public class AuthService {
     
     @Transactional
     public UserResponse register(UserRequest request) {
-        User user = new User(request.name(), request.email());
-        if (userRepository.existsByEmail(user.getEmail())) {
-            throw new DuplicateEmailException(user.getEmail());
+        if (userRepository.existsByEmail(request.email())) {
+            throw new DuplicateEmailException(request.email());
         }
+        // Hash password
+        String hashedPassword = passwordEncoder.encode(request.password());
+        
+        User user = new User(request.name(), request.email(), hashedPassword);
+
         return UserMapper.toResponse(userRepository.save(user));
     }
+
 }

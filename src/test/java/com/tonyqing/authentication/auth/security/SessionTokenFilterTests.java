@@ -59,7 +59,7 @@ class SessionTokenFilterTests {
     void shouldAuthenticateWithValidToken() throws ServletException, IOException {
         // Given
         String token = "valid-session-token";
-        User user = new User("Tony", "tony@example.com");
+        User user = new User("Tony", "tony@example.com", "password");
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
         when(authService.getUserFromToken(token)).thenReturn(user);

@@ -9,7 +9,7 @@ import com.tonyqing.authentication.auth.entity.User;
 
 public class UserMapper {
     public static User toEntity(UserRequest userRequest) {
-        User user = new User(userRequest.name(), userRequest.email());
+        User user = new User(userRequest.name(), userRequest.email(), userRequest.password());
         return user;
     }
 

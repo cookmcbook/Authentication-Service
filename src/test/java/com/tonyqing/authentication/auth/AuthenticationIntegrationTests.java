@@ -12,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.boot.webmvc.test.autoconfigure.AutoConfigureMockMvc;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
@@ -24,6 +25,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 
 @SpringBootTest
+@ActiveProfiles("dev")
 @AutoConfigureMockMvc
 class AuthenticationIntegrationTests {
 
@@ -47,7 +49,7 @@ class AuthenticationIntegrationTests {
     @Test
     void shouldRegisterLoginAndAccessProtectedRoute() throws Exception {
         // 1. Register a new account
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com");
+        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -58,7 +60,7 @@ class AuthenticationIntegrationTests {
 
         // 2. Login to get a token
         // login logic creates a session and returns a token
-        LoginRequest loginRequest = new LoginRequest("tony@example.com");
+        LoginRequest loginRequest = new LoginRequest("tony@example.com", "password");
 
         MvcResult loginResult = mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -86,7 +88,7 @@ class AuthenticationIntegrationTests {
 
     @Test
     void shouldRejectMissingTokenOnProtectedRoute() throws Exception {
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com");
+        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -100,7 +102,7 @@ class AuthenticationIntegrationTests {
 
     @Test
     void shouldRejectInvalidTokenOnProtectedRoute() throws Exception {
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com");
+        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -116,7 +118,7 @@ class AuthenticationIntegrationTests {
 
     @Test
     void shouldRejectDuplicateEmailRegistration() throws Exception {
-        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com");
+        UserRequest signUpRequest = new UserRequest("Tony Qing", "tony@example.com", "password");
 
         mockMvc.perform(post("/api/auth/register")
                 .contentType(MediaType.APPLICATION_JSON)
@@ -133,7 +135,7 @@ class AuthenticationIntegrationTests {
 
     @Test
     void shouldRejectLoginForUnknownUser() throws Exception {
-        LoginRequest loginRequest = new LoginRequest("missing@example.com");
+        LoginRequest loginRequest = new LoginRequest("missing@example.com", "password");
 
         mockMvc.perform(post("/api/auth/login")
                 .contentType(MediaType.APPLICATION_JSON)
