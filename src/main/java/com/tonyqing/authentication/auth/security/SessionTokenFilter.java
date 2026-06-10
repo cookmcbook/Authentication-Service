@@ -9,7 +9,9 @@ import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.tonyqing.authentication.auth.entity.User;
+import com.tonyqing.authentication.auth.exception.InvalidSessionException;
 import com.tonyqing.authentication.auth.repository.SessionRepository;
+import com.tonyqing.authentication.auth.service.AuthService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -19,10 +21,10 @@ import jakarta.servlet.http.HttpServletResponse;
 @Component
 public class SessionTokenFilter extends OncePerRequestFilter {
 
-    private final SessionRepository sessionRepository;
+    private final AuthService authService;
 
-    public SessionTokenFilter(SessionRepository sessionRepository) {
-        this.sessionRepository = sessionRepository;
+    public SessionTokenFilter(AuthService authService) {
+        this.authService = authService;
     }
 
     @Override
@@ -41,19 +43,19 @@ public class SessionTokenFilter extends OncePerRequestFilter {
 
         String token = header.substring(7);
 
-        sessionRepository.findByToken(token)
-                .filter(session -> session.getExpiresAt().isAfter(Instant.now()))
-                .ifPresent(session -> {
-                    User user = session.getUser();
+        try {
+            User user = authService.getUserFromToken(token);
 
-                    var authentication = new UsernamePasswordAuthenticationToken(
-                            user.getEmail(),
-                            null,
-                            List.of()
-                    );
+            var authentication = new UsernamePasswordAuthenticationToken(
+                    user,
+                    null,
+                    List.of()
+            );
 
-                    SecurityContextHolder.getContext().setAuthentication(authentication);
-                });
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+        } catch (InvalidSessionException ignored) {
+            SecurityContextHolder.clearContext();
+        }
 
         filterChain.doFilter(request, response);
     }

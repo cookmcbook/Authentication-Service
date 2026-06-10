@@ -9,10 +9,16 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
+import jakarta.persistence.Index;
 
 @Entity
-@Table(name = "sessions")
+@Table(name = "sessions", indexes = {
+    @Index(name = "idx_session_user_id", columnList = "user_id"),
+    @Index(name = "idx_session_expires_at", columnList = "expires_at")
+})
 public class Session {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -27,6 +33,19 @@ public class Session {
 
     @Column(nullable = false)
     private Instant expiresAt;
+
+    @PrePersist
+    public void onCreate() {
+        // add comment detailing what this does
+        expiresAt = Instant.now().plusSeconds(60 * 60 * 24); // 24 hours from now
+    }
+
+    protected Session() {}
+
+    public Session(String token, User user) {
+        this.token = token;
+        this.user = user;
+    }
 
     public Long getId() {
         return id;

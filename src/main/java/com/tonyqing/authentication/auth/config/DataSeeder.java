@@ -16,9 +16,7 @@ public class DataSeeder {
             boolean hasUsers = userRepository.count() > 0;
 
             if (!hasUsers) {
-                User user = new User();
-                user.setEmail("admin@example.com");
-                user.setName("Admin");
+                User user = new User("Admin","admin@example.com");
                 userRepository.save(user);
             }
         };

@@ -15,4 +15,10 @@ public class GlobalExceptionHandler {
     public Map<String, String> handleUserNotFound(UserNotFoundException ex) {
         return Map.of("error", ex.getMessage());
     }
+
+    @ExceptionHandler(InvalidSessionException.class)
+    @ResponseStatus(HttpStatus.UNAUTHORIZED)
+    public Map<String, String> handleInvalidSession(InvalidSessionException ex) {
+        return Map.of("error", ex.getMessage());
+    }
 }

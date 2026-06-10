@@ -38,7 +38,7 @@ public class UserService {
         User user = userRepository.findById(id)
             .orElseThrow(() -> new UserNotFoundException(id));
 
-        user.setName(request.name());
+        user.setDisplayName(request.name());
         user.setEmail(request.email());
 
         User savedUser = userRepository.save(user);
