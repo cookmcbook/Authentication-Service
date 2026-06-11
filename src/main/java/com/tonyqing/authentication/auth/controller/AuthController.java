@@ -73,7 +73,7 @@ public class AuthController {
 
     @PostMapping("/logout")
     @Transactional
-    public ResponseEntity<?> logout(@CookieValue(name = "refreshToken") String refreshToken) {
+    public ResponseEntity<Void> logout(@CookieValue(name = "refreshToken") String refreshToken) {
         authService.logout(refreshToken);
         ResponseCookie deleteCookie = ResponseCookie
         .from("refreshToken", "")
@@ -84,7 +84,7 @@ public class AuthController {
         .maxAge(0)
         .build();
 
-        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, deleteCookie.toString()).build();
+        return ResponseEntity.status(204).header(HttpHeaders.SET_COOKIE, deleteCookie.toString()).build();
     }
 
 

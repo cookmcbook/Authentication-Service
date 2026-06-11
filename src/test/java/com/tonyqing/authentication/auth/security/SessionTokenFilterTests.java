@@ -5,6 +5,7 @@ import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.exception.InvalidSessionException;
 import com.tonyqing.authentication.auth.security.SessionTokenFilter;
 import com.tonyqing.authentication.auth.service.AuthService;
+import com.tonyqing.authentication.auth.service.JwtService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -18,6 +19,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
 import java.time.Instant;
@@ -33,6 +35,12 @@ class SessionTokenFilterTests {
     private AuthService authService;
 
     @Mock
+    private JwtService jwtService;
+
+    @Mock
+    private PasswordEncoder passwordEncoder;
+
+    @Mock
     private FilterChain filterChain;
 
     @Mock
@@ -41,7 +49,7 @@ class SessionTokenFilterTests {
     @Mock
     private HttpServletResponse response;
 
-    @InjectMocks
+    @InjectMocks 
     private SessionTokenFilter filter;
 
     @BeforeEach
@@ -58,12 +66,14 @@ class SessionTokenFilterTests {
     @Test
     void shouldAuthenticateWithValidToken() throws ServletException, IOException {
         // Given
-        String token = "valid-session-token";
-        User user = new User("Tony", "tony@example.com", "password");
+        String token = "valid-jwt-token";
+        Long userId = 1L;
+
+        User user = new User("Tony", "tony@example.com", passwordEncoder.encode("password"));
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(authService.getUserFromToken(token)).thenReturn(user);
-
+        when(jwtService.getUserId(token)).thenReturn(userId);
+        when(authService.getUserFromId(userId)).thenReturn(user);
         // When
         filter.doFilter(request, response, filterChain);
 
@@ -79,7 +89,7 @@ class SessionTokenFilterTests {
         String token = "expired-token";
 
         when(request.getHeader("Authorization")).thenReturn("Bearer " + token);
-        when(authService.getUserFromToken(token)).thenThrow(new InvalidSessionException("Session expired"));
+        when(jwtService.getUserId(token)).thenThrow(new InvalidSessionException("Session expired"));
 
         // When
         filter.doFilter(request, response, filterChain);

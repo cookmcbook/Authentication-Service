@@ -22,13 +22,11 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SessionTokenFilter extends OncePerRequestFilter {
 
     private final AuthService authService;
-    private final JwtService jwtService = new JwtService();
-    private final UserRepository userRepository;
+    private final JwtService jwtService;
 
-
-    public SessionTokenFilter(AuthService authService, UserRepository userRepository) {
+    public SessionTokenFilter(AuthService authService, JwtService jwtService) {
         this.authService = authService;
-        this.userRepository = userRepository;
+        this.jwtService = jwtService;
     }
 
     @Override
@@ -51,8 +49,7 @@ public class SessionTokenFilter extends OncePerRequestFilter {
         try {
             // Find user from token and set authentication
             Long userId = jwtService.getUserId(token);
-            User user = userRepository.findById(Long.valueOf(userId))
-                .orElseThrow(() -> new InvalidSessionException("Invalid token"));
+            User user = authService.getUserFromId(Long.valueOf(userId));
 
             var authentication = new UsernamePasswordAuthenticationToken(
                     user,

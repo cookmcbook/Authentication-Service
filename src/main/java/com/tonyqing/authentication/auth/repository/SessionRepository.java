@@ -10,7 +10,7 @@ import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface SessionRepository extends JpaRepository<Session, Long>{
-    public Optional<Session> findByToken(String token);
+    public Optional<Session> findByRefreshToken(String token);
 
     @Transactional
     void deleteByUser(User user);
@@ -19,5 +19,5 @@ public interface SessionRepository extends JpaRepository<Session, Long>{
     void deleteByExpiresAtBefore(Instant now);
 
     @Transactional
-    void deleteByToken(String token);
+    void deleteByRefreshToken(String token);
 }

@@ -9,8 +9,10 @@ import javax.crypto.SecretKey;
 
 import org.springframework.stereotype.Service;
 
+import com.tonyqing.authentication.auth.exception.InvalidSessionException;
 import com.tonyqing.authentication.auth.entity.User;
 
+import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
@@ -38,13 +40,17 @@ public class JwtService {
     }
 
     public Long getUserId(String token) {
-        return Long.valueOf(
-                Jwts.parser()
-                        .verifyWith(key)
-                        .build()
-                        .parseSignedClaims(token)
-                        .getPayload()
-                        .getSubject()
-        );
+        try {
+            return Long.valueOf(
+                    Jwts.parser()
+                            .verifyWith(key)
+                            .build()
+                            .parseSignedClaims(token)
+                            .getPayload()
+                            .getSubject()
+            );
+        } catch (JwtException | IllegalArgumentException e) {
+            throw new InvalidSessionException("Invalid token signature or payload");
+        }
     }
 }

@@ -39,8 +39,16 @@ public class AuthService {
         this.sessionRepository = sessionRepository;
     }
 
+    public User getUserFromId(Long id) {
+        if (id == null) {
+            throw new InvalidSessionException("Invalid user id");
+        }
+        return userRepository.findById(id)
+                .orElseThrow(() -> new InvalidSessionException("Invalid user id"));
+    }
+
     public User getUserFromToken(String token) {
-        Session session = sessionRepository.findByToken(token)
+        Session session = sessionRepository.findByRefreshToken(token)
                 .orElseThrow(() -> new InvalidSessionException("Invalid session token"));
 
         if (session.getExpiresAt().isBefore(Instant.now())) {
@@ -80,7 +88,7 @@ public class AuthService {
 
     @Transactional
     public void logout(String refreshToken) {
-        sessionRepository.deleteByToken(refreshToken);
+        sessionRepository.deleteByRefreshToken(refreshToken);
     }
 
     // Refresh token
@@ -90,7 +98,7 @@ public class AuthService {
         if (refreshToken == null) {
             throw new InvalidSessionException("Invalid session token");
         }
-        Session session = sessionRepository.findByToken(refreshToken).orElseThrow(() -> new InvalidSessionException("Invalid session token"));
+        Session session = sessionRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new InvalidSessionException("Invalid session token"));
         //check if xpired
         if (session.getExpiresAt().isBefore(Instant.now())) {
             throw new InvalidSessionException("Session token expired");
