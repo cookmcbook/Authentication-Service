@@ -17,4 +17,7 @@ public interface SessionRepository extends JpaRepository<Session, Long>{
 
     @Transactional
     void deleteByExpiresAtBefore(Instant now);
+
+    @Transactional
+    void deleteByToken(String token);
 }

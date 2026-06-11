@@ -32,7 +32,7 @@ class AuthenticationIntegrationTests {
     @Autowired
     private MockMvc mockMvc;
 
-    private final ObjectMapper objectMapper = new ObjectMapper();
+   private final ObjectMapper objectMapper = new ObjectMapper();
 
     @Autowired
     private UserRepository userRepository;

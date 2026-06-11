@@ -1,13 +1,17 @@
 package com.tonyqing.authentication.auth.service;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.UUID;
 
+import org.springframework.http.ResponseCookie;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.springframework.web.bind.annotation.CookieValue;
 
 import com.tonyqing.authentication.auth.dto.LoginRequest;
 import com.tonyqing.authentication.auth.dto.LoginResponse;
+import com.tonyqing.authentication.auth.dto.TokenResponse;
 import com.tonyqing.authentication.auth.dto.RegisterRequest;
 import com.tonyqing.authentication.auth.dto.RegisterResponse;
 import com.tonyqing.authentication.auth.entity.Session;
@@ -26,8 +30,10 @@ public class AuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserRepository userRepository;
     private final SessionRepository sessionRepository;
+    private final JwtService jwtService = new JwtService();
 
-    public AuthService(PasswordEncoder passwordEncoder, UserRepository userRepository, SessionRepository sessionRepository) {
+    public AuthService(PasswordEncoder passwordEncoder, UserRepository userRepository,
+            SessionRepository sessionRepository) {
         this.passwordEncoder = passwordEncoder;
         this.userRepository = userRepository;
         this.sessionRepository = sessionRepository;
@@ -46,18 +52,19 @@ public class AuthService {
     }
 
     @Transactional
-    public LoginResponse login(LoginRequest request) {
+    public TokenResponse login(LoginRequest request) {
         return userRepository.findByEmail(request.email())
                 .map(user -> {
                     if (!passwordEncoder.matches(request.password(), user.getPasswordHash())) {
                         throw new InvalidSessionException("Invalid credentials");
                     }
-                    String token = UUID.randomUUID().toString();
-                    sessionRepository.save(new Session(token, user));
-                    return new LoginResponse(token);
+                    String accessToken = jwtService.createToken(user);
+                    String refreshToken = UUID.randomUUID().toString();
+                    sessionRepository.save(new Session(refreshToken, user));
+                    return new TokenResponse(accessToken, refreshToken);
                 }).orElseThrow(() -> new InvalidSessionException(request.email()));
     }
-    
+
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -65,10 +72,31 @@ public class AuthService {
         }
         // Hash password
         String hashedPassword = passwordEncoder.encode(request.password());
-        
+
         User user = new User(request.name(), request.email(), hashedPassword);
 
         return UserMapper.toResponse(userRepository.save(user));
     }
 
+    @Transactional
+    public void logout(String refreshToken) {
+        sessionRepository.deleteByToken(refreshToken);
+    }
+
+    // Refresh token
+    @Transactional
+    public TokenResponse refresh(String refreshToken) {
+        //validate token
+        if (refreshToken == null) {
+            throw new InvalidSessionException("Invalid session token");
+        }
+        Session session = sessionRepository.findByToken(refreshToken).orElseThrow(() -> new InvalidSessionException("Invalid session token"));
+        //check if xpired
+        if (session.getExpiresAt().isBefore(Instant.now())) {
+            throw new InvalidSessionException("Session token expired");
+        }
+
+        String accessToken = jwtService.createToken(session.getUser());
+        return new TokenResponse(accessToken, refreshToken);
+    }
 }

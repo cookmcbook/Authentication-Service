@@ -9,7 +9,9 @@ import org.springframework.web.filter.OncePerRequestFilter;
 
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.exception.InvalidSessionException;
+import com.tonyqing.authentication.auth.repository.UserRepository;
 import com.tonyqing.authentication.auth.service.AuthService;
+import com.tonyqing.authentication.auth.service.JwtService;
 
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -20,9 +22,13 @@ import jakarta.servlet.http.HttpServletResponse;
 public class SessionTokenFilter extends OncePerRequestFilter {
 
     private final AuthService authService;
+    private final JwtService jwtService = new JwtService();
+    private final UserRepository userRepository;
 
-    public SessionTokenFilter(AuthService authService) {
+
+    public SessionTokenFilter(AuthService authService, UserRepository userRepository) {
         this.authService = authService;
+        this.userRepository = userRepository;
     }
 
     @Override
@@ -44,7 +50,9 @@ public class SessionTokenFilter extends OncePerRequestFilter {
 
         try {
             // Find user from token and set authentication
-            User user = authService.getUserFromToken(token);
+            Long userId = jwtService.getUserId(token);
+            User user = userRepository.findById(Long.valueOf(userId))
+                .orElseThrow(() -> new InvalidSessionException("Invalid token"));
 
             var authentication = new UsernamePasswordAuthenticationToken(
                     user,

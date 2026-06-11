@@ -9,7 +9,6 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
-import jakarta.persistence.OneToOne;
 import jakarta.persistence.PrePersist;
 import jakarta.persistence.Table;
 import jakarta.persistence.Index;
@@ -25,7 +24,7 @@ public class Session {
     private Long id;
 
     @Column(nullable = false, unique = true)
-    private String token;
+    private String refreshToken;
 
     @ManyToOne(optional = false)
     @JoinColumn(name = "user_id")
@@ -33,6 +32,7 @@ public class Session {
 
     @Column(nullable = false)
     private Instant expiresAt;
+    
 
     @PrePersist
     public void onCreate() {
@@ -45,7 +45,7 @@ public class Session {
     protected Session() {}
 
     public Session(String token, User user) {
-        this.token = token;
+        this.refreshToken = token;
         this.user = user;
     }
 
@@ -57,12 +57,12 @@ public class Session {
         this.id = id;
     }
 
-    public String getToken() {
-        return token;
+    public String getRefreshToken() {
+        return refreshToken;
     }
 
-    public void setToken(String token) {
-        this.token = token;
+    public void setRefreshToken(String refreshToken) {
+        this.refreshToken = refreshToken;
     }
 
     public User getUser() {

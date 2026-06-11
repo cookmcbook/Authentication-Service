@@ -37,8 +37,8 @@ class SessionRepositoryTests {
         sessionRepository.deleteByExpiresAtBefore(now);
 
         // Then
-        Optional<Session> foundValid = sessionRepository.findByToken(valid.getToken());
-        Optional<Session> foundExpired = sessionRepository.findByToken(expired.getToken());
+        Optional<Session> foundValid = sessionRepository.findByToken(valid.getRefreshToken());
+        Optional<Session> foundExpired = sessionRepository.findByToken(expired.getRefreshToken());
         assertThat(foundValid).isPresent();
         assertThat(foundExpired).isEmpty(); 
     }
