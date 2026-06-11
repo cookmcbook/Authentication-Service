@@ -73,6 +73,23 @@ public class AuthService {
                 }).orElseThrow(() -> new InvalidSessionException(request.email()));
     }
 
+        // Refresh token
+    @Transactional
+    public TokenResponse refresh(String refreshToken) {
+        //validate token
+        if (refreshToken == null) {
+            throw new InvalidSessionException("Invalid session token");
+        }
+        Session session = sessionRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new InvalidSessionException("Invalid session token"));
+        //check if xpired
+        if (session.getExpiresAt().isBefore(Instant.now())) {
+            throw new InvalidSessionException("Session token expired");
+        }
+
+        String accessToken = jwtService.createToken(session.getUser());
+        return new TokenResponse(accessToken, refreshToken);
+    }
+
     @Transactional
     public RegisterResponse register(RegisterRequest request) {
         if (userRepository.existsByEmail(request.email())) {
@@ -91,20 +108,14 @@ public class AuthService {
         sessionRepository.deleteByRefreshToken(refreshToken);
     }
 
-    // Refresh token
     @Transactional
-    public TokenResponse refresh(String refreshToken) {
-        //validate token
-        if (refreshToken == null) {
-            throw new InvalidSessionException("Invalid session token");
-        }
-        Session session = sessionRepository.findByRefreshToken(refreshToken).orElseThrow(() -> new InvalidSessionException("Invalid session token"));
-        //check if xpired
-        if (session.getExpiresAt().isBefore(Instant.now())) {
-            throw new InvalidSessionException("Session token expired");
-        }
+    public void forgotPassword(String email) {
+        User user = userRepository.findByEmail(email).orElseThrow(() -> new InvalidSessionException("Invalid email"));
+        
+    }
 
-        String accessToken = jwtService.createToken(session.getUser());
-        return new TokenResponse(accessToken, refreshToken);
+    @Transactional
+    public void resetPassword(String token, String password) {
+        
     }
 }

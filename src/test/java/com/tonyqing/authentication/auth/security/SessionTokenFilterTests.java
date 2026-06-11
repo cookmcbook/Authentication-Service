@@ -1,9 +1,7 @@
 package com.tonyqing.authentication.auth.security;
 
-import com.tonyqing.authentication.auth.entity.Session;
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.exception.InvalidSessionException;
-import com.tonyqing.authentication.auth.security.SessionTokenFilter;
 import com.tonyqing.authentication.auth.service.AuthService;
 import com.tonyqing.authentication.auth.service.JwtService;
 
@@ -22,8 +20,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
 import java.io.IOException;
-import java.time.Instant;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;

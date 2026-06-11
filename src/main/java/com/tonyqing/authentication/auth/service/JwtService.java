@@ -4,6 +4,7 @@ import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
+import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
@@ -30,6 +31,7 @@ public class JwtService {
         Instant now = Instant.now();
 
         return Jwts.builder()
+                .id(UUID.randomUUID().toString())
                 .subject(user.getId().toString())
                 .claim("email", user.getEmail())
                 .claim("displayName", user.getDisplayName())
