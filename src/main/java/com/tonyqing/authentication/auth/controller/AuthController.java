@@ -87,6 +87,20 @@ public class AuthController {
         return ResponseEntity.status(204).header(HttpHeaders.SET_COOKIE, deleteCookie.toString()).build();
     }
 
+    @PostMapping("/forgot-password")
+    @Transactional
+    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody String email) {
+        authService.forgotPassword(email);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PostMapping("/reset-password")
+    @Transactional
+    public ResponseEntity<Void> resetPassword(@Valid @RequestBody String token, @Valid @RequestBody String password) {
+        authService.resetPassword(token, password);
+        return ResponseEntity.noContent().build();
+    }
+
 
 
 }
