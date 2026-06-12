@@ -70,7 +70,7 @@ public class User {
         this.email = email;
     }
 
-    protected void setPasswordHash(String passwordHash) {
+    public void setPasswordHash(String passwordHash) {
         this.passwordHash = passwordHash;
     }
 }

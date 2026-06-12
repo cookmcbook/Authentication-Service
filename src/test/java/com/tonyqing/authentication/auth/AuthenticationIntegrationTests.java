@@ -8,9 +8,11 @@ import com.tonyqing.authentication.auth.dto.TokenResponse;
 
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.repository.UserRepository;
+import com.tonyqing.authentication.auth.service.AuthService;
 
 import jakarta.servlet.http.Cookie;
 
+import com.tonyqing.authentication.auth.repository.ResetTokenRepository;
 import com.tonyqing.authentication.auth.repository.SessionRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -46,8 +48,13 @@ class AuthenticationIntegrationTests {
         @Autowired
         private SessionRepository sessionRepository;
 
+        @Autowired
+        private ResetTokenRepository resetTokenRepository;
+        
+
         @BeforeEach
         void cleanUp() {
+                resetTokenRepository.deleteAll();
                 sessionRepository.deleteAll();
                 userRepository.deleteAll();
         }
@@ -173,13 +180,182 @@ class AuthenticationIntegrationTests {
                 Cookie refreshCookie = loginResult.getResponse().getCookie("refreshToken");
 
                 assertThat(refreshCookie).isNotNull();
-                assertThat(sessionRepository.findByRefreshToken(refreshCookie.getValue())).isPresent();
+                assertThat(sessionRepository.findByRefreshToken(AuthService.hashToken(refreshCookie.getValue()))).isPresent();
 
                 mockMvc.perform(post("/api/auth/logout")
                                 .cookie(refreshCookie))
                                 .andExpect(status().isNoContent())
                                 .andExpect(cookie().maxAge("refreshToken", 0));
 
-                assertThat(sessionRepository.findByRefreshToken(refreshCookie.getValue())).isEmpty();
+                assertThat(sessionRepository.findByRefreshToken(AuthService.hashToken(refreshCookie.getValue()))).isEmpty();
+        }
+
+        @Test
+        void shouldResetPasswordAndAllowLoginWithNewPassword() throws Exception {
+                RegisterRequest registerRequest = new RegisterRequest("Tony Qing", "tony@example.com", "old-password");
+
+                mockMvc.perform(post("/api/auth/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(registerRequest)))
+                                .andExpect(status().isCreated());
+
+                MvcResult forgotPasswordResult = mockMvc.perform(post("/api/auth/forgot-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "email": "tony@example.com"
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                String forgotPasswordBody = forgotPasswordResult.getResponse().getContentAsString();
+
+                String resetToken = objectMapper.readTree(forgotPasswordBody)
+                                .get("resetToken")
+                                .asText();
+
+                assertThat(resetToken).isNotBlank();
+
+                mockMvc.perform(post("/api/auth/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "token": "%s",
+                                                  "password": "new-password"
+                                                }
+                                                """.formatted(resetToken)))
+                                .andExpect(status().isOk());
+
+                mockMvc.perform(post("/api/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(
+                                                new LoginRequest("tony@example.com", "old-password"))))
+                                .andExpect(status().isUnauthorized());
+
+                mockMvc.perform(post("/api/auth/login")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(
+                                                new LoginRequest("tony@example.com", "new-password"))))
+                                .andExpect(status().isOk())
+                                .andExpect(cookie().exists("refreshToken"));
+        }
+
+        @Test
+        void shouldRejectResetPasswordWithInvalidToken() throws Exception {
+                mockMvc.perform(post("/api/auth/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "token": "fake-token",
+                                                  "password": "new-password"
+                                                }
+                                                """))
+                                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldRejectReusingResetToken() throws Exception {
+                RegisterRequest registerRequest = new RegisterRequest("Tony Qing", "tony@example.com", "old-password");
+
+                mockMvc.perform(post("/api/auth/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(registerRequest)))
+                                .andExpect(status().isCreated());
+
+                MvcResult forgotPasswordResult = mockMvc.perform(post("/api/auth/forgot-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "email": "tony@example.com"
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                String resetToken = objectMapper.readTree(
+                                forgotPasswordResult.getResponse().getContentAsString())
+                                .get("resetToken")
+                                .asText();
+
+                mockMvc.perform(post("/api/auth/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "token": "%s",
+                                                  "password": "new-password"
+                                                }
+                                                """.formatted(resetToken)))
+                                .andExpect(status().isOk());
+
+                mockMvc.perform(post("/api/auth/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "token": "%s",
+                                                  "password": "another-password"
+                                                }
+                                                """.formatted(resetToken)))
+                                .andExpect(status().isUnauthorized());
+        }
+
+        @Test
+        void shouldInvalidateOldResetTokenWhenNewOneIsRequested() throws Exception {
+                RegisterRequest registerRequest = new RegisterRequest("Tony Qing", "tony@example.com", "old-password");
+
+                mockMvc.perform(post("/api/auth/register")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content(objectMapper.writeValueAsString(registerRequest)))
+                                .andExpect(status().isCreated());
+
+                MvcResult firstResult = mockMvc.perform(post("/api/auth/forgot-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "email": "tony@example.com"
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                String firstToken = objectMapper.readTree(firstResult.getResponse().getContentAsString())
+                                .get("resetToken")
+                                .asText();
+
+                MvcResult secondResult = mockMvc.perform(post("/api/auth/forgot-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "email": "tony@example.com"
+                                                }
+                                                """))
+                                .andExpect(status().isOk())
+                                .andReturn();
+
+                String secondToken = objectMapper.readTree(secondResult.getResponse().getContentAsString())
+                                .get("resetToken")
+                                .asText();
+
+                assertThat(secondToken).isNotEqualTo(firstToken);
+
+                mockMvc.perform(post("/api/auth/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "token": "%s",
+                                                  "password": "new-password"
+                                                }
+                                                """.formatted(firstToken)))
+                                .andExpect(status().isUnauthorized());
+
+                mockMvc.perform(post("/api/auth/reset-password")
+                                .contentType(MediaType.APPLICATION_JSON)
+                                .content("""
+                                                {
+                                                  "token": "%s",
+                                                  "password": "new-password"
+                                                }
+                                                """.formatted(secondToken)))
+                                .andExpect(status().isOk());
         }
 }

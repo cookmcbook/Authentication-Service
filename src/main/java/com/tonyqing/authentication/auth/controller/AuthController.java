@@ -15,11 +15,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import com.tonyqing.authentication.auth.dto.ForgotPasswordRequest;
+import com.tonyqing.authentication.auth.dto.ForgotPasswordResponse;
 import com.tonyqing.authentication.auth.dto.LoginRequest;
 import com.tonyqing.authentication.auth.dto.LoginResponse;
 import com.tonyqing.authentication.auth.dto.TokenResponse;
 import com.tonyqing.authentication.auth.dto.RegisterRequest;
 import com.tonyqing.authentication.auth.dto.RegisterResponse;
+import com.tonyqing.authentication.auth.dto.ResetPasswordRequest;
+import com.tonyqing.authentication.auth.dto.ResetPasswordResponse;
 import com.tonyqing.authentication.auth.entity.User;
 import com.tonyqing.authentication.auth.mapper.UserMapper;
 import com.tonyqing.authentication.auth.service.AuthService;
@@ -48,7 +52,7 @@ public class AuthController {
         TokenResponse response = authService.login(request);
         ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", response.refreshToken())
             .httpOnly(true)
-            .secure(false) // true in production with HTTPS
+            .secure(true) // true in production with HTTPS
             .sameSite("Strict")
             .path("/api/auth/refresh")
             .maxAge(Duration.ofDays(30))
@@ -68,7 +72,16 @@ public class AuthController {
     @Transactional
     public ResponseEntity<LoginResponse> refresh(@CookieValue (name = "refreshToken") String refreshToken) {
         TokenResponse response = authService.refresh(refreshToken);
-        return ResponseEntity.ok().body(new LoginResponse(response.accessToken()));
+        
+        ResponseCookie refreshCookie = ResponseCookie.from("refreshToken", response.refreshToken())
+            .httpOnly(true)
+            .secure(true) 
+            .sameSite("Strict")
+            .path("/api/auth/refresh")
+            .maxAge(Duration.ofDays(30))
+            .build();
+
+        return ResponseEntity.ok().header(HttpHeaders.SET_COOKIE, refreshCookie.toString()).body(new LoginResponse(response.accessToken()));
     }
 
     @PostMapping("/logout")
@@ -84,21 +97,21 @@ public class AuthController {
         .maxAge(0)
         .build();
 
-        return ResponseEntity.status(204).header(HttpHeaders.SET_COOKIE, deleteCookie.toString()).build();
+        return ResponseEntity.noContent().header(HttpHeaders.SET_COOKIE, deleteCookie.toString()).build();
     }
 
     @PostMapping("/forgot-password")
     @Transactional
-    public ResponseEntity<Void> forgotPassword(@Valid @RequestBody String email) {
-        authService.forgotPassword(email);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ForgotPasswordResponse> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        ForgotPasswordResponse response = authService.forgotPassword(request);
+        return ResponseEntity.ok().body(response);
     }
 
     @PostMapping("/reset-password")
     @Transactional
-    public ResponseEntity<Void> resetPassword(@Valid @RequestBody String token, @Valid @RequestBody String password) {
-        authService.resetPassword(token, password);
-        return ResponseEntity.noContent().build();
+    public ResponseEntity<ResetPasswordResponse> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        ResetPasswordResponse response = authService.resetPassword(request);
+        return ResponseEntity.ok().body(response);
     }
 
 

@@ -8,6 +8,7 @@ import java.util.UUID;
 
 import javax.crypto.SecretKey;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import com.tonyqing.authentication.auth.exception.InvalidSessionException;
@@ -17,15 +18,14 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
 
-
-
 @Service
 public class JwtService {
 
-    private static final String SECRET =
-            "this-is-a-super-long-dev-secret-key-for-hs256-auth-testing-123456";
+    private final SecretKey key;
 
-    private final SecretKey key = Keys.hmacShaKeyFor(SECRET.getBytes(StandardCharsets.UTF_8));
+    public JwtService(@Value("${auth.jwt.secret:this-is-a-fallback-secret-key-that-is-at-least-32-characters-long}") String secret) {
+        this.key = Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
+    }
 
     public String createToken(User user) {
         Instant now = Instant.now();
